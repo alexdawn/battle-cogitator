@@ -1,0 +1,12 @@
+digraph G {
+catalogue -> {
+    readme, publications, costTypes, profileTypes,
+    categoryEntries, forceEntries, selectionEntries,
+    entryLinks, rules, infoLinks, sharedSelectionEntries,
+    sharedSelectionEntriesGroups, sharedRules,
+    sharedProfiles, sharedInfoGroups
+}
+conditionGroup -> conditionGroup -> conditions
+repeats -> repeat
+modifierGroup -> modifierGroup -> modifier
+}
