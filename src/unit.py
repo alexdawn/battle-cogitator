@@ -1,5 +1,7 @@
 from collections import namedtuple
 from enum import Enum
+from typing import List
+import logging
 
 import rules
 
@@ -9,8 +11,9 @@ Model = namedtuple(
         'strength', 'toughness', 'wounds', 'attacks', 'leadership', 'armour'])
 
 Weapon = namedtuple(
-    'Weapon', ['name', 'range', 'type',
-    'strength', 'armour_piercing', 'damage', 'ability'])
+    'Weapon', [
+        'name', 'range', 'type',
+        'strength', 'armour_piercing', 'damage', 'ability'])
 
 
 class WeaponType(Enum):
@@ -23,7 +26,8 @@ class WeaponType(Enum):
 
 
 Power = namedtuple(
-    'Power', ['name', 'power_level', 'ability'])
+    'Power', ['name', 'power_level', 'ability']
+)
 
 Ability = namedtuple(
     'Ability', ['name', 'description', 'callback']
@@ -31,7 +35,7 @@ Ability = namedtuple(
 
 
 class Unit():
-    def __init__(self, name, unit_type, pos, strategy, models):
+    def __init__(self, name: str, unit_type: str, pos: float, strategy: Enum, models: List[Model]):
         self.name = name
         self.unit_type = unit_type
         self.pos = pos
@@ -54,10 +58,10 @@ class Unit():
     def unit_movement(self) -> float:
         return min(m['model'].movement for m in self.models)
 
-    def unit_toughness(self) -> float:
+    def unit_toughness(self) -> float:  # not sure if to use toughest or least tough?
         return max(m['model'].toughness for m in self.models)
 
-    def take_damage(self, damage, message) -> bool:
+    def take_damage(self, damage: int, message: List[str]) -> bool:
         if damage >= self.models[-1]['model'].wounds:
             self.models_lost += 1
             m = self.models.pop()
@@ -71,19 +75,19 @@ class Unit():
 
     def hold(self):
         self.moved = 'held'
-        print("held at {}".format(self.pos))
+        logging.info("held at {}".format(self.pos))
 
     def move(self, distance, direction):
         # check unit is not engaged
         assert distance <= self.unit_movement()
         self.moved = 'moved'
         self.pos += direction * distance
-        print("moved to {}".format(self.pos))
+        logging.info("moved to {}".format(self.pos))
 
     def advance(self, distance, direction):
         # check unit is not engaged
         assert distance <= self.unit_movement()
         self.moved = 'advanced'
         advance = rules.roll_d(6)
-        print("Advance an extra {}".format(advance))
+        logging.info("Advance an extra {}".format(advance))
         self.pos += (direction + advance) * distance

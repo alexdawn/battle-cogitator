@@ -6,31 +6,36 @@
 * Charge, Overwatch, Melee
 * Morale
 * Simulation Statistics (KIA, MIA)
+* Detailed Stats damage per weapon, damage per unit, location of kills
+
+## Work In Progress
+
+* REST API using flask
+* handle special abilities
+* handle more weapon attributes DX
+
 
 ## TODO
 
-9th ed rules
-stats kills by weapon
+* 9th ed rules
+* stats kills by weapon
 
-handle more movement strategies
-handle Line of Sight
-handle fall back logic
-handle independant charecters (inc heroic intervention)
-handle aura abilities
-handle psykers
-handle special abilities
-handle more weapon attributes DX
-handle mortal wounds
-handle invunrable saves
-handle cover
-handle terrain
+* handle more movement strategies
+* handle Line of Sight
+* handle fall back logic
+* handle independant charecters (inc heroic intervention)
+* handle aura abilities
+* handle psykers
 
-handle vehicles
-handle transport
+* handle mortal wounds
+* handle invunrable saves
+* handle cover
+* handle terrain
 
-Battlescribe imports
+* handle vehicles
+* handle transport
 
-flask for web UI
+* Battlescribe imports
 
-Monte Carlo
-Markov Chain analysis
+* Monte Carlo
+* Markov Chain analysis

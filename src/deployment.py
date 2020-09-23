@@ -15,21 +15,21 @@ def make_piece(name, leader, heavy):
     if leader:
         leadership += 1
         weapons = [
-            Weapon('laspistol', 18, 'pistol 1', 4, 0, 1, None),
-            Weapon('grenade', 8, 'grenade D3', 8, -1, 1, None),
-            Weapon('chainsword', 'melee', 'melee 2', 5, -1, 1, None)
+            Weapon('laspistol', 18, 'pistol 1', 4, 0, '1', None),
+            Weapon('grenade', 8, 'grenade D3', 8, -1, '1', None),
+            Weapon('chainsword', 'melee', 'melee 2', 5, -1, '1', None)
         ]
     elif heavy:
         weapons = [
-            Weapon('rocket', 36, 'heavy 1', 8, -2, 1, None),
-            Weapon('grenade', 8, 'grenade D3', 8, -1, 1, None),
-            Weapon('knife', 'melee', 'melee 1', 4, 0, 1, None)
+            Weapon('rocket', 36, 'heavy 1', 8, -2, '1', None),
+            Weapon('grenade', 8, 'grenade D3', 8, -1, '1', None),
+            Weapon('knife', 'melee', 'melee 1', 4, 0, '1', None)
         ]
     else:
         weapons = [
-            Weapon('lasgun', 36, 'assault 2', 5, 0, 1, None),
-            Weapon('grenade', 8, 'grenade D3', 8, -1, 1, None),
-            Weapon('knife', 'melee', 'melee 1', 4, 0, 1, None)
+            Weapon('lasgun', 36, 'assault 2', 5, 0, '1', None),
+            Weapon('grenade', 8, 'grenade D3', 8, -1, '1', None),
+            Weapon('knife', 'melee', 'melee 1', 4, 0, '1', None)
         ]  # change to user strength, attacks]
     return {
         'model': Model(name, 6, 4, 4, 4, 4, 1, 1, leadership, 5),

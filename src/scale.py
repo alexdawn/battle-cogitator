@@ -3,7 +3,15 @@
 
 SCALE = 64
 INCH_TO_CM = 2.54
+SECONDS_PER_TURN = 10
 
-def to_real_scale(value):
+def to_real_scale(value: float) -> float:
     return value * SCALE * INCH_TO_CM / 100
-to_real_scale(7 + 6 + 2 * 6) / 6
+
+
+def to_cm(value: float) -> float:
+    return value * INCH_TO_CM
+
+
+def to_seconds(value: float) -> float:
+    return value * SECONDS_PER_TURN

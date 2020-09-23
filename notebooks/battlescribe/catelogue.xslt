@@ -30,7 +30,10 @@
         name="profileType"
         match="gc:gameSystem/gc:profileTypes/gc:profileType|gc:gameSystem/cat:profileTypes/cat:profileType"
         use="@name"/>
-
+    <xsl:key
+        name="allIds"
+        match="//*[@id]"
+        use="@id"/>
     <xsl:template match="/">
         <html>
             <head>
@@ -43,21 +46,21 @@
                 <!-- Latest compiled JavaScript -->
                 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
 
-                <h1><xsl:value-of select="gc:gameSystem/@name"/></h1>
-                <xsl:value-of select="gc:gameSystem/gc:readme/text()"/>
+                <!--<h1><xsl:value-of select="gc:gameSystem/@name"/></h1>
+                <xsl:value-of select="gc:gameSystem/gc:readme/text()"/>-->
 
                 <h1>Publications</h1>
                 <ul>
-                <xsl:for-each select="//gc:publication|//cat:publication">
+                <xsl:for-each select="//cat:publication">
                     <li><xsl:apply-templates select="."/></li>
                 </xsl:for-each>
                 </ul>
 
                 <h1>Category Entries</h1>
-                <xsl:apply-templates select="gc:gameSystem/gc:categoryEntries|gc:gameSystem/cat:categoryEntries"/>
+                <xsl:apply-templates select="gc:gameSystem/cat:categoryEntries"/>
 
-                <h1>Forces Entries</h1>
-                <xsl:apply-templates select="gc:gameSystem/gc:forceEntries|gc:gameSystem/cat:forceEntries"/>
+                <!--<h1>Forces Entries</h1>
+                <xsl:apply-templates select="gc:gameSystem/gc:forceEntries|gc:gameSystem/cat:forceEntries"/>-->
 
 
                 <h1>Entry Links</h1>
@@ -117,7 +120,7 @@
     </xsl:template>
     <xsl:template name="primaryCategory">
         <h1>
-            <span class="badge badge-secondary">
+            <span class="badge badge-secondary" style="margin: 2px;">
                 <xsl:value-of
                 select="key('category', gc:categoryLinks/gc:categoryLink[@primary='true']/@targetId|cat:categoryLinks/cat:categoryLink[@primary='true']/@targetId)/@name"/>
             </span>
@@ -162,7 +165,7 @@
     <xsl:template match="gc:costs|cat:costs">
         <xsl:for-each select="gc:cost|cat:cost">
             <xsl:if test="number(@value) > 0.0">
-                <span class="label label-default">
+                <span class="label label-default" style="margin: 2px;">
                     <xsl:value-of select="@name"/>:&#160;
                     <xsl:value-of select="@value"/>
                 </span>
@@ -176,8 +179,8 @@
         </xsl:for-each>
     </xsl:template>
     <xsl:template match="gc:categoryEntry|cat:categoryEntry">
-        <!--<div style="border-style: solid; margin: 2px;">-->
-            <span class="label label-default">
+        <!--<div style="border-style: solid; padding: 2px; margin: 2px;">-->
+            <span class="label label-default" style="margin: 2px;">
                 <xsl:value-of select="@name"/>
             </span>
             <!-- took out as seems to be empty
@@ -196,7 +199,7 @@
     </xsl:template>
 
     <xsl:template match="gc:profile|cat:profile">
-        <xsl:call-template name="entryBase"/>
+        <!--<xsl:call-template name="entryBase"/>-->
         <table class="table">
             <xsl:apply-templates select="key('profileType', @typeName)"/>
             <tr>
@@ -210,7 +213,7 @@
 
     <xsl:template match="gc:forceEntries|cat:forceEntries">
         <xsl:for-each select="gc:forceEntry|cat:forceEntry">
-            <div style="border-style: solid; margin: 2px;">
+            <div style="border-style: solid; padding: 2px; margin: 2px;">
                 <!--<xsl:call-template name="containerEntryBase"/>-->
                 Child Forces: <xsl:apply-templates select="gc:forceEntries|cat:forceEntries"/>
                 Tags: <xsl:apply-templates select="gc:categoryLinks|cat:categoryLinks"/>
@@ -220,7 +223,7 @@
 
     <xsl:template match="gc:sharedSelectionEntries|gc:selectionEntries|cat:sharedSelectionEntries|cat:selectionEntries">
         <xsl:for-each select="gc:selectionEntry|cat:selectionEntry">
-            <div style="border-style: solid; margin: 2px;">
+            <div style="border-style: solid; padding: 2px; margin: 2px;">
                 Seletion Entry<br/>
                 <b>type: </b><xsl:value-of select="@type"/>
                 <xsl:call-template name="selectionEntryBase"/>
@@ -230,19 +233,24 @@
     </xsl:template>
     <xsl:template match="gc:sharedSelectionEntryGroups|gc:selectionEntryGroups|cat:sharedSelectionEntryGroups|cat:selectionEntryGroups">
         <xsl:for-each select="gc:selectionEntryGroup|cat:selectionEntryGroup">
-            <div style="border-style: solid; margin: 2px;">
+            <div style="border-style: solid; padding: 2px; margin: 2px;">
                 <xsl:call-template name="selectionEntryBase"/>
-                Default Selection: <xsl:value-of select="@defaultSelectionEntryId"/>
+                <a>
+                    <xsl:attribute name="href">
+                        <xsl:value-of select="@defaultSelectionEntryId"/>
+                    </xsl:attribute>
+                    <xsl:value-of select="key('allIds', @defaultSelectionEntryId)/@name"/>
+                </a>
             </div>
         </xsl:for-each>
     </xsl:template>
     <xsl:template match="gc:entryLinks|cat:entryLinks">
         <xsl:for-each select="gc:entryLink|cat:entryLink">
-            <div style="border-style: solid; margin: 2px;">
+            <div style="border-style: solid; padding: 2px; margin: 2px;">
                 <xsl:call-template name="selectionEntryBase"/>
-                costs:<xsl:apply-templates select="gc:costs|cat:costs"/>
-                link:<xsl:apply-templates select="key(@type, @targetId)"/>
-                entry links:<xsl:apply-templates select="gc:entryLinks|cat:entryLinks"/>
+                <xsl:apply-templates select="gc:costs|cat:costs"/>
+                <xsl:apply-templates select="key(@type, @targetId)"/>
+                <xsl:apply-templates select="gc:entryLinks|cat:entryLinks"/>
             </div>
         </xsl:for-each>
     </xsl:template>
@@ -254,14 +262,14 @@
     </xsl:template>
     <xsl:template match="gc:sharedInfoGroups|gc:infoGroups|cat:sharedInfoGroups|cat:infoGroups">
         <xsl:for-each select="gc:infoGroup|cat:infoGroup">
-            <div style="border-style: solid; margin: 2px;">
+            <div style="border-style: solid; padding: 2px; margin: 2px;">
                 <xsl:call-template name="infoGroup"/>
             </div>
         </xsl:for-each>
     </xsl:template>
     <xsl:template match="gc:infoLinks|cat:infoLinks">
         <xsl:for-each select="gc:infoLink|cat:infoLink">
-            <div style="border-style: solid; margin: 2px;">
+            <div style="border-style: solid; padding: 2px; margin: 2px;">
                 <xsl:call-template name="entryBase"/>
                 <xsl:apply-templates select="key(@type, @targetId)"/>
             </div>
@@ -306,7 +314,7 @@
         </xsl:for-each>
     </xsl:template>
     <xsl:template match="gc:conditions|cat:conditions">
-        <div style="border-style: solid; margin: 2px;">
+        <div style="border-style: solid; padding: 2px; margin: 2px;">
             <xsl:for-each select="gc:condition|cat:condition">
                 <a>
                     <xsl:attribute name="href">
@@ -320,7 +328,7 @@
         </div>
     </xsl:template>
         <xsl:template match="gc:repeats|cat:repeats">
-        <div style="border-style: solid; margin: 2px;">
+        <div style="border-style: solid; padding: 2px; margin: 2px;">
             <xsl:for-each select="gc:repeat|cat:repeat">
                 type: <xsl:value-of select="@type"/>
                 <a>child<xsl:value-of select="@childId"/></a>
@@ -332,14 +340,14 @@
         </div>
     </xsl:template>
     <xsl:template match="gc:conditionGroups|cat:conditionGroups">
-        <div style="border-style: solid; margin: 2px;">
+        <div style="border-style: solid; padding: 2px; margin: 2px;">
             <xsl:apply-templates select="gc:conditions|cat:conditions"/>
             <xsl:apply-templates select="gc:conditionGroups|cat:conditionGroups"/>
         </div>
     </xsl:template>
     <xsl:template match="gc:modifiers|cat:modifiers">
         <xsl:for-each select="gc:modifier|cat:modifier">
-            <div style="border-style: solid; margin: 2px;">
+            <div style="border-style: solid; padding: 2px; margin: 2px;">
                 <xsl:if test="gc:conditions|gc:conditionGroups|cat:conditions|cat:conditionGroups">
                     if&#160;<xsl:apply-templates select="gc:conditions|cat:conditions"/>
                     <xsl:apply-templates select="gc:conditionGroups|cat:conditionGroups"/>
