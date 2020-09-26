@@ -23,7 +23,7 @@
         match="gc:gameSystem/gc:sharedSelectionEntries/gc:selectionEntry|gc:gameSystem/cat:sharedSelectionEntries/cat:selectionEntry"
         use="@id"/>
     <xsl:key
-        name="selectionEntryGroups"
+        name="selectionEntryGroup"
         match="gc:gameSystem/gc:sharedSelectionEntryGroups/gc:selectionEntryGroup|gc:gameSystem/cat:sharedSelectionEntryGroups/cat:selectionEntryGroup"
         use="@id"/>
     <xsl:key
