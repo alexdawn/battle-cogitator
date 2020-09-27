@@ -56,30 +56,26 @@
                 </xsl:for-each>
                 </ul>
 
-                <h1>Category Entries</h1>
-                <xsl:apply-templates select="gc:gameSystem/cat:categoryEntries"/>
+                <h1>Index</h1>
+                <ul>
+                    <xsl:for-each select="gc:gameSystem/cat:entryLinks/cat:entryLink">
+                    <li><a>
+                        <xsl:attribute name="href">
+                            #<xsl:value-of select="@id"/>
+                        </xsl:attribute>
+                        <xsl:value-of select="key(@type, @targetId)/@name"/>
+                    </a></li>
+                    </xsl:for-each>
+                </ul>
 
-                <!--<h1>Forces Entries</h1>
-                <xsl:apply-templates select="gc:gameSystem/gc:forceEntries|gc:gameSystem/cat:forceEntries"/>-->
+                <xsl:if test="gc:gameSystem/cat:forceEntries">
+                    <h1>Forces Entries</h1>
+                    <xsl:apply-templates select="gc:gameSystem/gc:forceEntries|gc:gameSystem/cat:forceEntries"/>
+                </xsl:if>
 
-
-                <h1>Entry Links</h1>
+                <h1>Entries</h1>
                 <xsl:apply-templates select="gc:gameSystem/cat:entryLinks"/>
-                <!--
-                <h1>Shared Selection Entries</h1>
-                <xsl:apply-templates select="gc:gameSystem/gc:sharedSelectionEntries"/>
 
-                <h1>Shared Selection Entry Groups</h1>
-                <xsl:apply-templates select="gc:gameSystem/gc:sharedSelectionEntryGroups"/>
-
-                <h1>Shared Rules</h1>
-                <xsl:apply-templates select="gc:gameSystem/gc:sharedRules"/>
-
-                <h1>Shared Profiles</h1>
-                <xsl:for-each select="gc:gameSystem/gc:sharedProfiles">
-                    <xsl:apply-templates select="gc:profile"/>
-                </xsl:for-each>
-                -->
             </body>
         </html>
     </xsl:template>
@@ -98,12 +94,14 @@
             Publication:&#160;
             <xsl:apply-templates select="key('pub', @publicationId)"/>
             &#160;
-            <xsl:value-of select="@page"/>
+            <xsl:if test="@page">
+                p<xsl:value-of select="@page"/>
+            </xsl:if>
         </xsl:if>
     </xsl:template>
     <xsl:template name="entryBase">
         <h2><a>
-            <xsl:attribute name="name">
+            <xsl:attribute name="id">
                 <xsl:value-of select="@id"/>
             </xsl:attribute>
             <xsl:value-of select="@name"/>
@@ -130,20 +128,19 @@
         <xsl:call-template name="primaryCategory"/>
         <xsl:call-template name="containerEntryBase"/>
         <xsl:if test="gc:selectionEntries|cat:selectionEntries|gc:selectionEntryGroups|cat:selectionEntryGroups|gc:entryLinks|cat:entryLinks">
-            Selection Entries:<br/>
             <xsl:apply-templates select="gc:selectionEntries|cat:selectionEntries"/>
             <xsl:apply-templates select="gc:selectionEntryGroups|cat:selectionEntryGroups"/>
             <xsl:apply-templates select="gc:entryLinks|cat:entryLinks"/>
         </xsl:if>
         <xsl:if test="gc:categoryLinks|cat:categoryLinks">
-            Category Links:<xsl:apply-templates select="gc:categoryLinks|cat:categoryLinks"/>
+            <xsl:apply-templates select="gc:categoryLinks|cat:categoryLinks"/>
         </xsl:if>
     </xsl:template>
     <xsl:template name="infoNodeGroup">
-        Profiles:<xsl:apply-templates select="gc:profiles|cat:profiles"/>
-        Rules:<xsl:apply-templates select="gc:rules|cat:rules"/>
-        Info Groups:<xsl:apply-templates select="gc:infoGroups|cat:infoGroups"/>
-        Info Links:<xsl:apply-templates select="gc:infoLinks|cat:infoLinks"/>
+        <xsl:apply-templates select="gc:profiles|cat:profiles"/>
+        <xsl:apply-templates select="gc:rules|cat:rules"/>
+        <xsl:apply-templates select="gc:infoGroups|cat:infoGroups"/>
+        <xsl:apply-templates select="gc:infoLinks|cat:infoLinks"/>
     </xsl:template>
     <xsl:template name="infoGroup">
         <xsl:call-template name="entryBase"/>
@@ -224,7 +221,6 @@
     <xsl:template match="gc:sharedSelectionEntries|gc:selectionEntries|cat:sharedSelectionEntries|cat:selectionEntries">
         <xsl:for-each select="gc:selectionEntry|cat:selectionEntry">
             <div style="border-style: solid; padding: 2px; margin: 2px;">
-                Seletion Entry<br/>
                 <b>type: </b><xsl:value-of select="@type"/>
                 <xsl:call-template name="selectionEntryBase"/>
                 <b>costs: </b><xsl:apply-templates select="gc:costs|cat:costs"/>

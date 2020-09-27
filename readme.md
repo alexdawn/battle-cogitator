@@ -3,6 +3,7 @@
 * Simulate multi-turn combat for squads
 * Linear movement, single position squad
 * Shooting, weapon types
+* Common Dice Notation
 * Charge, Overwatch, Melee
 * Morale
 * Simulation Statistics (KIA, MIA)
@@ -12,14 +13,11 @@
 
 * REST API using flask
 * handle special abilities
-* handle more weapon attributes DX
-
+* battlescribe imports (cat and roster)
 
 ## TODO
 
 * 9th ed rules
-* stats kills by weapon
-
 * handle more movement strategies
 * handle Line of Sight
 * handle fall back logic
@@ -35,7 +33,6 @@
 * handle vehicles
 * handle transport
 
-* Battlescribe imports
-
+* Stats Expectation (mathhammer style)
 * Monte Carlo
 * Markov Chain analysis
