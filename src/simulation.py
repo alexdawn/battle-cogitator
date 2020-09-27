@@ -28,6 +28,8 @@ def simulate_games(amount: int) -> Dict[str, Any]:
     rounds, winner = [], []
     player1_kia, player1_mia = [], []
     player2_kia, player2_mia = [], []
+    player1_killzone, player2_killzone = [], []
+    player1_overkill, player2_overkill = [], []
     player1_units, player2_units = defaultdict(list), defaultdict(list)
     player1_weapons, player2_weapons = defaultdict(list), defaultdict(list)
     for i in range(amount):
@@ -38,6 +40,10 @@ def simulate_games(amount: int) -> Dict[str, Any]:
         player1_mia.append(stats[0]['MIA'])
         player2_kia.append(stats[1]['KIA'])
         player2_mia.append(stats[1]['MIA'])
+        player1_killzone.extend(stats[0]['killzone'])
+        player2_killzone.extend(stats[1]['killzone'])
+        player1_overkill.extend(stats[0]['overkill'])
+        player1_overkill.extend(stats[1]['overkill'])
         for k, v in stats[0]['damage_per_unit'].items():
             player1_units[k].append(v)
         for k, v in stats[0]['damage_per_weapon'].items():
@@ -54,6 +60,8 @@ def simulate_games(amount: int) -> Dict[str, Any]:
             "win_rate": 1 - mean(winner),
             "kia": get_stats(player1_kia),
             "mia": get_stats(player1_mia),
+            "killzone": get_stats(player1_killzone),
+            "overkill": get_stats(player1_overkill),
             "damage_per_unit": {k: get_stats(v) for k, v in player1_units.items()},
             "damage_per_weapon": {k: get_stats(v) for k, v in player1_weapons.items()}
         },
@@ -62,6 +70,8 @@ def simulate_games(amount: int) -> Dict[str, Any]:
             "win_rate": mean(winner),
             "kia": get_stats(player2_kia),
             "mia": get_stats(player2_mia),
+            "killzone": get_stats(player2_killzone),
+            "overkill": get_stats(player2_overkill),
             "damage_per_unit": {k: get_stats(v) for k, v in player2_units.items()},
             "damage_per_weapon": {k: get_stats(v) for k, v in player2_weapons.items()}
         }
@@ -70,9 +80,9 @@ def simulate_games(amount: int) -> Dict[str, Any]:
 
 def simulate_game(players: List[str], units: List[List[Unit]]) -> Tuple[int, int, Dict[str, Any]]:
     stats = (
-        {'KIA': 0, 'MIA': 0, 'troops_per_turn': [], 'killzone': [],
+        {'KIA': 0, 'MIA': 0, 'troops_per_turn': [], 'killzone': [], 'overkill': [],
         'damage_per_unit': defaultdict(lambda : 0), 'damage_per_weapon': defaultdict(lambda : 0)},
-        {'KIA': 0, 'MIA': 0, 'troops_per_turn': [], 'killzone': [],
+        {'KIA': 0, 'MIA': 0, 'troops_per_turn': [], 'killzone': [], 'overkill': [],
         'damage_per_unit': defaultdict(lambda : 0), 'damage_per_weapon': defaultdict(lambda : 0)},
     )
     won = False

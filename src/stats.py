@@ -3,7 +3,11 @@ from math import sqrt, pow
 
 
 def mean(values: List[float]) -> float:
-    return sum(values) / len(values)
+    try:
+        return sum(values) / len(values)
+    except:
+        import pdb
+        pdb.set_trace()
 
 
 def standard_deviation(values: List[float]) -> float:
@@ -17,7 +21,10 @@ def standard_deviation(values: List[float]) -> float:
 
 
 def get_stats(values: List[float]) -> Dict[str, float]:
-    return {
-        "mean": mean(values),
-        "std": round(standard_deviation(values), 2)
-    }
+    if len(values) > 0:
+        return {
+            "mean": mean(values),
+            "std": round(standard_deviation(values), 2)
+        }
+    else:
+        return "No value"

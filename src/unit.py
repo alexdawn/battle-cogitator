@@ -1,6 +1,6 @@
 from collections import namedtuple
 from enum import Enum
-from typing import List
+from typing import List, Tuple
 import logging
 
 import rules
@@ -47,44 +47,53 @@ class Unit():
         self.models = models
 
     def reset(self):
+        """Flags unit to start of the turn state"""
         self.moved = 'yet_to_move'
         self.has_charged = False
         self.models_lost = 0
         self.has_used_grenade = False
 
     def max_effective_range(self) -> float:
+        """Find the maximum range of the unit"""
         return max(int(w.range) for m in self.models for w in m['weapons'] if w.range != 'melee')
 
     def unit_movement(self) -> float:
+        """Finds the movement of the unit"""
         return min(m['model'].movement for m in self.models)
 
     def unit_toughness(self) -> float:  # not sure if to use toughest or least tough?
+        """Find toughness to use for combats"""
         return max(m['model'].toughness for m in self.models)
 
-    def take_damage(self, damage: int, message: List[str]) -> bool:
-        if damage >= self.models[-1]['model'].wounds:
+    def take_damage(self, damage: int, message: List[str]) -> Tuple[bool, int]:
+        """Apply damage to a model, return if the model is killed and how much damage was applied"""
+        wounds_remaining = self.models[-1]['model'].wounds
+        if damage >= wounds_remaining:
             self.models_lost += 1
             m = self.models.pop()
             message.append("{} is dead!".format(m['model'].name))
-            return True
+            return True, wounds_remaining
         else:
             p = self.models[-1]['model']
             self.models[-1]['model'] = p._replace(wounds = p.wounds - damage)
             message.append("{} is injured but not dead!".format(p['model'].name))
-            return False
+            return False, damage
 
     def hold(self):
+        """Apply hold as a movement"""
         self.moved = 'held'
         logging.info("held at {}".format(self.pos))
 
     def move(self, distance, direction):
-        # check unit is not engaged
+        """Move unit"""
+        # need to check unit is not engaged
         assert distance <= self.unit_movement()
         self.moved = 'moved'
         self.pos += direction * distance
         logging.info("moved to {}".format(self.pos))
 
     def advance(self, distance, direction):
+        """Advance unit with additional movement"""
         # check unit is not engaged
         assert distance <= self.unit_movement()
         self.moved = 'advanced'

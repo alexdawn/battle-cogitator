@@ -222,11 +222,14 @@ def armour_save(i: int, unit, weapon: Weapon, opossing_unit: Unit, combat_log: L
 def damage(i: int, unit, weapon: Weapon, opossing_unit: Unit, combat_log: List[str], stats):
     opfor = get_opfor(i)
     damage = resolve_die_notation(weapon.damage)
-    if opossing_unit.take_damage(damage, combat_log):
+    model_died, damage_inflicted = opossing_unit.take_damage(damage, combat_log)
+    if model_died:
         stats[opfor]['KIA'] += 1
-        stats[opfor]['killzone'].append(opossing_unit.pos)
-        stats[i]['damage_per_unit'][unit.name] += damage  # need to handle overkill and wasted damage
-        stats[i]['damage_per_weapon'][weapon.name] += damage
+        stats[opfor]['killzone'].extend([opossing_unit.pos])
+        stats[i]['overkill'].extend([damage - damage_inflicted])
+    if damage_inflicted:
+        stats[i]['damage_per_unit'][unit.name] += damage_inflicted
+        stats[i]['damage_per_weapon'][weapon.name] += damage_inflicted
     return True
 
 
