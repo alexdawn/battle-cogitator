@@ -28,6 +28,8 @@ def simulate_games(amount: int) -> Dict[str, Any]:
     rounds, winner = [], []
     player1_kia, player1_mia = [], []
     player2_kia, player2_mia = [], []
+    player1_units, player2_units = defaultdict(list), defaultdict(list)
+    player1_weapons, player2_weapons = defaultdict(list), defaultdict(list)
     for i in range(amount):
         round, win, stats = simulate_game(players, deepcopy(units))
         rounds.append(round)
@@ -36,6 +38,14 @@ def simulate_games(amount: int) -> Dict[str, Any]:
         player1_mia.append(stats[0]['MIA'])
         player2_kia.append(stats[1]['KIA'])
         player2_mia.append(stats[1]['MIA'])
+        for k, v in stats[0]['damage_per_unit'].items():
+            player1_units[k].append(v)
+        for k, v in stats[0]['damage_per_weapon'].items():
+            player1_weapons[k].append(v)
+        for k, v in stats[1]['damage_per_unit'].items():
+            player2_units[k].append(v)
+        for k, v in stats[1]['damage_per_weapon'].items():
+            player2_weapons[k].append(v)
 
     return {
         "round": get_stats(rounds),
@@ -43,15 +53,18 @@ def simulate_games(amount: int) -> Dict[str, Any]:
             "name": players[0],
             "win_rate": 1 - mean(winner),
             "kia": get_stats(player1_kia),
-            "mia": get_stats(player1_mia)
+            "mia": get_stats(player1_mia),
+            "damage_per_unit": {k: get_stats(v) for k, v in player1_units.items()},
+            "damage_per_weapon": {k: get_stats(v) for k, v in player1_weapons.items()}
         },
         "player2_stats": {
             "name": players[1],
             "win_rate": mean(winner),
             "kia": get_stats(player2_kia),
-            "mia": get_stats(player2_mia)
-        },
-        "final_round": stats
+            "mia": get_stats(player2_mia),
+            "damage_per_unit": {k: get_stats(v) for k, v in player2_units.items()},
+            "damage_per_weapon": {k: get_stats(v) for k, v in player2_weapons.items()}
+        }
     }
 
 

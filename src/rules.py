@@ -225,7 +225,7 @@ def damage(i: int, unit, weapon: Weapon, opossing_unit: Unit, combat_log: List[s
     if opossing_unit.take_damage(damage, combat_log):
         stats[opfor]['KIA'] += 1
         stats[opfor]['killzone'].append(opossing_unit.pos)
-        stats[i]['damage_per_unit'][unit.name] += damage
+        stats[i]['damage_per_unit'][unit.name] += damage  # need to handle overkill and wasted damage
         stats[i]['damage_per_weapon'][weapon.name] += damage
     return True
 

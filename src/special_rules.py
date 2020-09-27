@@ -16,7 +16,7 @@ def all_is_dust():
 
 # AW2	Always wounds on a 2+
 def always_wound(amount: int=2):
-     def wrapper(phase, stats):
+    def wrapper(phase, stats):
         if phase == 'wound':
             return roll_d(6) >= amount
     return wrapper
@@ -72,7 +72,7 @@ def melta():
 
 # MW1	Additional Mortal Wound on 6 to Wound
 # MWD3	Additional d3 Mortal Wounds on 6
-def mortal_wound(amount: str):
+def mortal_wound_on_wound(amount: str):
     def wrapper(phase, stats):
         if phase == 'wound':
             return
@@ -80,7 +80,7 @@ def mortal_wound(amount: str):
 
 
 # MW1H	Mortal wound on 6 to hit
-def mortal_wound():
+def mortal_wound_on_hit():
     def wrapper(phase, stats):
         if phase == 'aim':
             return
