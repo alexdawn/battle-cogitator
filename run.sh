@@ -38,7 +38,7 @@ function build_build() {
     python -m mypy "$PRJDIR" --config-file "$THISDIR/mypy.ini"
     (
         cd "$THISDIR"
-        flake8 "$PRJDIR" --ignore=W504 && echo "Passed Flake8"
+        flake8 "$PRJDIR" --ignore=W504 --max-line-length=100 && echo "Passed Flake8"
     )
 }
 

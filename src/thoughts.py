@@ -1,5 +1,5 @@
 import random
-# todo theme them on topic
+# TODO theme them on topic
 
 thoughts = [
     'Only fools fail in their duties',

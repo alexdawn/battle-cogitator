@@ -39,5 +39,6 @@ cadian_names = [
     'Palvo'
 ]
 
+
 def generate_name():
     return "{}".format(random.choice(cadian_names))

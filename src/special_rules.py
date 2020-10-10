@@ -1,3 +1,6 @@
+from rules import roll_d
+
+
 # AH	Auto Hit
 def auto_hit():
     def wrapper(phase, stats):
@@ -15,7 +18,7 @@ def all_is_dust():
 
 
 # AW2	Always wounds on a 2+
-def always_wound(amount: int=2):
+def always_wound(amount: int = 2):
     def wrapper(phase, stats):
         if phase == 'wound':
             return roll_d(6) >= amount
@@ -23,7 +26,7 @@ def always_wound(amount: int=2):
 
 
 # D2	Additional 2 Damage on Wounds of 6
-def extra_damage(amount: int=2):
+def extra_damage(amount: int = 2):
     def wrapper(phase, stats):
         if phase == 'wound':
             return
@@ -39,7 +42,7 @@ def damage_reduction():
 
 
 # FNP5	5+ Feel No Pain, if armour save fails get a bonus save (apart from insta-death)
-def feel_no_pain(amount: int=5):
+def feel_no_pain(amount: int = 5):
     def wrapper(phase, stats):
         if phase == 'armour save':
             return

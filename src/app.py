@@ -1,5 +1,4 @@
-import json
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 
 from simulation import simulate_games
 from thoughts import thought_for_the_day
@@ -11,8 +10,8 @@ app = Flask(__name__)
 
 @app.route('/api/simulate')
 def index():
-    #data = request.get_json()
-    data = {
+    # data = request.get_json()
+    data = {  # noqa: F841
         'game_settings': {
             'max_turns': 0,  # zero unlimited rounds
             'simulation_mode': {
@@ -86,6 +85,7 @@ def index():
 def performance():
     return jsonify({'stats': []})
 
+
 @app.route('/api/thought')
 def thought():
     return jsonify({
@@ -101,5 +101,6 @@ def name():
 @app.route('/api/date')
 def date():
     return jsonify({'current_date': get_imperial_date_now()})
+
 
 app.run(debug=True)

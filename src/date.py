@@ -4,6 +4,7 @@ from math import floor, ceil
 
 YEAR_HOURS = 365 * 24
 
+
 def get_imperial_date(datetime):
     date = datetime.date()
     year_start = date.replace(month=1, day=1)
@@ -19,8 +20,10 @@ def get_imperial_date(datetime):
 def get_imperial_date_from_date(year, month, day):
     return get_imperial_date(datetime(year, month, day))
 
+
 def get_imperial_date_now():
     return get_imperial_date(datetime.now())
+
 
 if __name__ == "__main__":
     print("now", get_imperial_date_now())

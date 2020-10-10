@@ -1,13 +1,15 @@
 from random import randrange
 from typing import Tuple, List, Dict, Any
 from itertools import zip_longest
+from math import ceil
 import logging
+from typing import Optional
 
-from unit import Unit, Weapon
+from unit import Unit, Model, Weapon
 from stratgey import Strategy, get_strategy_function
 
 
-def take_round(players: Tuple[str], units: Tuple[List[Unit]], stats) -> bool:
+def take_round(players: List[str], units: List[List[Unit]], stats: List[Dict[str, Any]]) -> bool:
     """Play a round for each player"""
     for i, p in enumerate(players):
         for x, y in enumerate(players):
@@ -19,17 +21,17 @@ def take_round(players: Tuple[str], units: Tuple[List[Unit]], stats) -> bool:
     return won
 
 
-def player_model_count(units: Tuple[List[Unit]], i: int) -> int:
+def player_model_count(units: List[List[Unit]], i: int) -> int:
     """Get count of models player has"""
     return sum(len(u.models) for u in units[i])
 
 
-def player_has_models(units: Tuple[List[Unit]], i: int) -> bool:
+def player_has_models(units: List[List[Unit]], i: int) -> bool:
     """Does player have any models left?"""
     return player_model_count(units, i) > 0
 
 
-def take_turn(i: int, player: str, units: Tuple[List[Unit]], stats) -> bool:
+def take_turn(i: int, player: str, units: List[List[Unit]], stats: List[Dict[str, Any]]) -> bool:
     """Run through each phase"""
     logging.info("{}".format(player))
     logging.info("====")
@@ -42,21 +44,56 @@ def take_turn(i: int, player: str, units: Tuple[List[Unit]], stats) -> bool:
     return not player_has_models(units, 0) or not player_has_models(units, 1)
 
 
-def roll_d(x) -> int:
+def roll_d(x: int) -> int:
     """Roll a DX"""
     return randrange(1, x)
 
 
-def get_seperation(unit1: Unit, unit2: Unit) -> float:
+MODIFIER_ORDER = {
+    '/': 1,
+    '*': 2,
+    '+': 3,
+    '-': 4
+}
+
+
+def apply_modifier(result: float, modifier: Tuple[str, int]) -> float:
+    """Apply modifier for dice roll"""
+    if modifier[0] == '+':
+        return result + modifier[1]
+    elif modifier[0] == '-':
+        return result - modifier[1]
+    elif modifier[0] == '*':
+        return result * modifier[1]
+    elif modifier[0] == '/':
+        return result / modifier[1]
+    else:
+        raise RuntimeError("Unknown operator {}".format(modifier[0]))
+
+
+def apply_modifiers(x: str, min_value: int, modifiers: List[Tuple[str, int]]) -> str:
+    if x == '-':
+        return '-'
+    result = float(x)
+    for mod in sorted(modifiers, key=lambda mod: MODIFIER_ORDER[mod[0]]):
+        result = apply_modifier(result, mod)
+    return str(min(min_value, ceil(result)))
+
+
+def get_seperation(unit1: Unit, unit2: Optional[Unit]) -> float:
     """Get Distance between two units"""
-    return unit2.pos - unit1.pos
+    if type(unit2) == Unit:
+        return float(unit2.pos - unit1.pos)  # type: ignore
+    else:
+        return float("inf")
 
 
-def get_nearest_opposing_unit(unit: Unit, opfor: int, units: Tuple[List[Unit]]) -> Unit:
+def get_nearest_opposing_unit(unit: Unit, opfor: int, units: List[List[Unit]]) -> Optional[Unit]:
     """Find the nearest opposing unit"""
     opossed = sorted(units[opfor], key=lambda ou: get_seperation(unit, ou))
     if opossed:
         return opossed[0]
+    return None
 
 
 def get_opfor(i: int) -> int:
@@ -64,23 +101,23 @@ def get_opfor(i: int) -> int:
     return 1 if i == 0 else 0
 
 
-def move_phase(i: int, units: Tuple[List[Unit]]) -> None:
+def move_phase(i: int, units: List[List[Unit]]) -> None:
     """Move a players models"""
     for unit in units[i]:
         if unit.models:
-            opossing_unit = get_nearest_opposing_unit(unit,  get_opfor(i), units)
+            opossing_unit = get_nearest_opposing_unit(unit, get_opfor(i), units)
             seperation = get_seperation(unit, opossing_unit)
             direction = 1 if seperation > 0 else -1
-            movement = unit.unit_movement()
+            _ = unit.unit_movement()
             strat = get_strategy_function(unit.strategy)
             strat(unit, abs(seperation), direction)
 
 
-def psychic_phase(i: int, units: Tuple[List[Unit]], stats) -> None:
+def psychic_phase(i: int, units: List[List[Unit]], stats) -> None:
     """Cast psychic powers"""
     for unit in units[i]:
         for u, m in enumerate(unit.models):
-            for w in m['powers']:
+            for power in m.powers:
                 logging.warning("No psykers yet")
 
 
@@ -98,11 +135,6 @@ def wound_roll(strength: int, toughness: int) -> Tuple[int, bool]:
     else:
         need = 6
     return result, result >= need
-
-
-def pick_target():
-    # pick nearest enemy not in combat
-    pass
 
 
 def choose_weapon(unit: Unit, seperation: float, weapons: List[Weapon]) -> List[Weapon]:
@@ -174,22 +206,28 @@ def flavour_text(name: str, weapon_type: str) -> str:
         'melee': 'hits with'
     }
     return (texts[weapon_type] +
-        " an " if name[0].lower() in ('a', 'e', 'i', 'o', 'u') else " a " +
-        name)
+            " an " if name[0].lower() in ('a', 'e', 'i', 'o', 'u') else " a " +
+            name)
 
 
 def aim(
-        i: int, model: Dict, unit: Unit, weapon: Weapon,
+        i: int, model: Model, unit: Unit, weapon: Weapon,
         opossing_unit: Unit, is_overwatch: bool, combat_log: List[str], stats) -> bool:
+    """Part of attacking see if weapon hits"""
     result = roll_d(6)
-    if weapon.type.split(" ")[0] == 'melee':
+    if weapon.type.split(" ")[0] != 'melee':
         success = result >= (
             6 if is_overwatch
-            else model['model'].ballistic_skill + aim_penalty(unit, weapon.type.split(" ")[0])
+            else model.model.ballistic_skill + aim_penalty(unit, weapon.type.split(" ")[0])
         )
     else:
-        success = result >= model['model'].weapon_skill
-    combat_log.append("{} {}".format(model['model'].name, flavour_text(weapon.name, weapon.type.split(" ")[0])))
+        success = result >= model.model.weapon_skill
+    combat_log.append(
+        "{} {}".format(
+            model.model.name,
+            flavour_text(weapon.name, weapon.type.split(" ")[0])
+        )
+    )
     if success:
         combat_log.append("Hit!")
         return wound(i, unit, weapon, opossing_unit, combat_log, stats)
@@ -198,7 +236,9 @@ def aim(
         return False
 
 
-def wound(i: int, unit, weapon: Weapon, opossing_unit: Unit, combat_log: List[str], stats) -> bool:
+def wound(i: int, unit: Unit, weapon: Weapon, opossing_unit: Unit, combat_log: List[str], stats)\
+        -> bool:
+    """Roll to see if hit causes a wound"""
     result, success = wound_roll(weapon.strength, opossing_unit.unit_toughness())
     if success:
         combat_log.append("Wounds!")
@@ -208,9 +248,13 @@ def wound(i: int, unit, weapon: Weapon, opossing_unit: Unit, combat_log: List[st
         return False
 
 
-def armour_save(i: int, unit, weapon: Weapon, opossing_unit: Unit, combat_log: List[str], stats) -> bool:
+def armour_save(
+        i: int, unit: Unit, weapon: Weapon, opossing_unit: Unit, combat_log: List[str], stats)\
+        -> bool:
+    """Roll ot see if armour saves"""
+    # TODO handle invurable saves
     result = roll_d(6)
-    success = result < opossing_unit.models[-1]['model'].armour - weapon.armour_piercing
+    success = result < opossing_unit.models[-1].model.armour - weapon.armour_piercing
     if success:
         combat_log.append("Armour fails!")
         return damage(i, unit, weapon, opossing_unit, combat_log, stats)
@@ -219,14 +263,16 @@ def armour_save(i: int, unit, weapon: Weapon, opossing_unit: Unit, combat_log: L
         return False
 
 
-def damage(i: int, unit, weapon: Weapon, opossing_unit: Unit, combat_log: List[str], stats):
+def damage(i: int, unit: Unit, weapon: Weapon, opossing_unit: Unit, combat_log: List[str], stats)\
+        -> bool:
+    """Work out and apply damage"""
     opfor = get_opfor(i)
     damage = resolve_die_notation(weapon.damage)
     model_died, damage_inflicted = opossing_unit.take_damage(damage, combat_log)
     if model_died:
         stats[opfor]['KIA'] += 1
         stats[opfor]['killzone'].extend([opossing_unit.pos])
-        stats[i]['overkill'].extend([damage - damage_inflicted])
+        stats[i]['overkill'].extend([int(damage - damage_inflicted)])
     if damage_inflicted:
         stats[i]['damage_per_unit'][unit.name] += damage_inflicted
         stats[i]['damage_per_weapon'][weapon.name] += damage_inflicted
@@ -234,108 +280,113 @@ def damage(i: int, unit, weapon: Weapon, opossing_unit: Unit, combat_log: List[s
 
 
 def shoot_with_unit(
-        i: int, units: List[List[Unit]], unit: Unit, stats: Dict[str, Any],
-        is_overwatch: bool=False, charging_unit: Unit=None)\
+        i: int, units: List[List[Unit]], unit: Unit, stats: List[Dict[str, Any]],
+        is_overwatch: bool = False, charging_unit: Unit = None)\
         -> None:
     """Do shots with a unit"""
-    # handle grenade to be thrown by model with worst weapons
+    # TODO handle grenade to be thrown by model with worst weapons
     opfor = get_opfor(i)
     if len(units[opfor]):
-        opossing_unit = charging_unit if is_overwatch else get_nearest_opposing_unit(unit, opfor, units)
+        opossing_unit = charging_unit if is_overwatch else get_nearest_opposing_unit(
+            unit, opfor, units)
         sep = get_seperation(unit, opossing_unit)
         for u, m in enumerate(unit.models):
-            for w in choose_weapon(unit, sep, m['weapons']):
+            for w in choose_weapon(unit, sep, m.weapons):
                 weapon_type, attack_notation = w.type.split(" ")
                 attacks = resolve_die_notation(attack_notation)
                 if weapon_type == 'rapid_fire' and abs(sep) <= w.range / 2:
                     logging.info("Rapid fire weapon is at close range, twice the attacks")
                     attacks *= 2
-                if (w.range != 'melee'
-                    and (weapon_type != 'grenade' or not unit.has_used_grenade)
-                    and can_attack(unit, abs(sep), weapon_type)
-                    and abs(sep) <= w.range):
+                if (w.range != 'melee' and
+                        (weapon_type != 'grenade' or not unit.has_used_grenade) and
+                        can_attack(unit, abs(sep), weapon_type) and
+                        abs(sep) <= w.range):
                     if weapon_type == 'grenade':
                         unit.has_used_grenade = True
                     for a in range(int(attacks)):
                         if opossing_unit and len(opossing_unit.models) > 0:
-                            combat_log = []
+                            combat_log: List[str] = []
                             aim(i, m, unit, w, opossing_unit, is_overwatch, combat_log, stats)
                             if len(opossing_unit.models) == 0:
-                                combat_log.append("\nUnit wiped out!")
+                                combat_log.append("Unit wiped out!")
                                 units[opfor].remove(opossing_unit)
                             logging.info(" ".join(combat_log))
 
 
-def shooting_phase(i: int, units: List[List[Unit]], stats: Dict[str, Any]) -> None:
+def shooting_phase(i: int, units: List[List[Unit]], stats: List[Dict[str, Any]]) -> None:
     for unit in units[i]:
         shoot_with_unit(i, units, unit, stats)
 
 
-def charge_phase(i: int, units: List[List[Unit]], stats: Dict[str, Any]) -> None:
+def charge_phase(i: int, units: List[List[Unit]], stats: List[Dict[str, Any]]) -> None:
     """Do charge phase"""
     opfor = get_opfor(i)
     direction = 1 if i == 0 else -1
     for unit in units[i]:
         if unit.models and unit.strategy in (Strategy.CHARGE, Strategy.HCHARGE):
-            opossing_unit = get_nearest_opposing_unit(unit,  get_opfor(i), units)
+            opossing_unit = get_nearest_opposing_unit(unit, get_opfor(i), units)
             if opossing_unit:
                 seperation = abs(get_seperation(unit, opossing_unit))
                 if units[i] and seperation <= 12 and seperation > 1:
                     logging.info("Defender fires in overwatch...")
-                    shoot_with_unit(opfor, units, opossing_unit, stats, is_overwatch=True, charging_unit=unit)
+                    shoot_with_unit(
+                        opfor, units, opossing_unit, stats,
+                        is_overwatch=True, charging_unit=unit
+                    )
                     charge = roll_d(6) + roll_d(6)
                     if charge >= seperation:
                         logging.info("Charge success {}".format(charge))
                         unit.pos += direction * min(charge, seperation)
                     else:
-                        logging.info("Charge failed rolled {}, but needed {}".format(charge, seperation))
+                        logging.info("Charge failed rolled {}, but needed {}".format(
+                            charge, seperation))
 
 
-def combat(i: int, units: List[List[Unit]], unit: Unit, stats: Dict[str, Any]) -> None:
+def combat(i: int, units: List[List[Unit]], unit: Unit, stats: List[Dict[str, Any]]) -> None:
     """Enact the combat for one unit"""
     opfor = get_opfor(i)
     if len(units[opfor]):
         opossing_unit = get_nearest_opposing_unit(unit, opfor, units)
         sep = get_seperation(unit, opossing_unit)
-        if abs(sep) <= 1:
+        if abs(sep) <= 1 and opossing_unit:
             for u, m in enumerate(unit.models):
-                for w in m['weapons']:
+                for w in m.weapons:
                     weapon_type, attacks = w.type.split(" ")
                     if w.range == 'melee':
                         for a in range(int(attacks)):
                             if len(opossing_unit.models):
-                                combat_log = []
+                                combat_log: List[str] = []
                                 aim(i, m, unit, w, opossing_unit, False, combat_log, stats)
                                 if len(opossing_unit.models) == 0:
-                                    combat_log.append("\nUnit wiped out!")
+                                    combat_log.append("Unit wiped out!")
                                     units[opfor].remove(opossing_unit)
                                 logging.info(" ".join(combat_log))
 
 
-def fight_phase(i: int, units: List[List[Unit]], stats: Dict[str, Any]) -> None:
+def fight_phase(i: int, units: List[List[Unit]], stats: List[Dict[str, Any]]) -> None:
     """Fight phase rules, do charging combats first, then alternate other combats"""
     opfor = get_opfor(i)
-    # charge combats:
+    # charging unit fight first
     for unit in units[i]:
         if unit.has_charged:
             logging.info("Charging unit:")
             combat(i, units, unit, stats)
-    # other combats (need to rank by importance metric threat, threatened)
-    # alternates player
+    # other combats go next, alternating players
+    # # TODO  need to rank by importance metric threat, threatened
     for iu, ou in zip_longest(
-        [u for u in units[i] if not unit.has_charged], units[opfor]):
+            [u for u in units[i] if not unit.has_charged], units[opfor]):
         if iu:
             combat(i, units, iu, stats)
         if ou:
             combat(opfor, units, ou, stats)
 
 
-def morale_test(i: int, units: List[List[Unit]], stats: Dict[str, Any]) -> None:
+def morale_test(i: int, units: List[List[Unit]], stats: List[Dict[str, Any]]) -> None:
     """Go through each unit and do morale test"""
     for unit in units[i]:
         unit_size = len(unit.models)
         if unit_size > 0 and unit.models_lost > 0:
-            leadership = max(m['model'].leadership for m in unit.models)
+            leadership = max(m.model.leadership for m in unit.models)
             morale_test = roll_d(6) + unit.models_lost
             if morale_test > leadership:
                 flee = min(max(morale_test - leadership, 0), unit_size)
@@ -343,12 +394,12 @@ def morale_test(i: int, units: List[List[Unit]], stats: Dict[str, Any]) -> None:
                 for x in range(flee):
                     model = unit.models.pop()
                     stats[i]['MIA'] += 1
-                    logging.info("{} flees".format(model['model'].name))
+                    logging.info("{} flees".format(model.model.name))
             else:
                 logging.info("{} passes Morale Test!".format(unit.name))
 
 
-def morale_phase(i: int, units: List[List[Unit]], stats: Dict[str, Any]) -> None:
+def morale_phase(i: int, units: List[List[Unit]], stats: List[Dict[str, Any]]) -> None:
     """Test both players starting with current player"""
     opfor = get_opfor(i)
     morale_test(i, units, stats)
