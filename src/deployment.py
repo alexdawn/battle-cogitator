@@ -1,4 +1,4 @@
-from unit import Unit, Model, Weapon
+from unit import Unit, Model, ModelStats, Weapon
 from stratgey import Strategy
 from names import generate_name
 
@@ -31,9 +31,10 @@ def make_piece(name, leader, heavy):
             Weapon('grenade', 8, 'grenade D3', 8, -1, '1', None),
             Weapon('knife', 'melee', 'melee 1', 4, 0, '1', None)
         ]  # change to user strength, attacks]
-    return {
-        'model': Model(name, 6, 4, 4, 4, 4, 1, 1, leadership, 5),
-        'powers': [],
-        'abilities': [],  # not sure how this is gonna look like callbacks?
-        'weapons': weapons
-    }
+    return Model(
+        ModelStats(name, 6, 4, 4, 4, 4, 1, 1, leadership, 5),
+        None,
+        [],
+        [],  # not sure how this is gonna look like callbacks?
+        weapons
+    )

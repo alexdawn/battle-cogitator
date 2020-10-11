@@ -35,7 +35,9 @@ def take_turn(i: int, player: str, units: List[List[Unit]], stats: List[Dict[str
     """Run through each phase"""
     logging.info("{}".format(player))
     logging.info("====")
+    # TODO add command phase
     move_phase(i, units)
+    # TODO add reinforcement phase
     psychic_phase(i, units, stats)
     shooting_phase(i, units, stats)
     charge_phase(i, units, stats)
@@ -284,12 +286,16 @@ def shoot_with_unit(
         is_overwatch: bool = False, charging_unit: Unit = None)\
         -> None:
     """Do shots with a unit"""
+    # TODO allocate targets before making any attacks
     # TODO handle grenade to be thrown by model with worst weapons
+    # TODO Big guns never tire
+    # TODO look out sir
     opfor = get_opfor(i)
     if len(units[opfor]):
         opossing_unit = charging_unit if is_overwatch else get_nearest_opposing_unit(
             unit, opfor, units)
         sep = get_seperation(unit, opossing_unit)
+        # TODO handle all of one weapon profile together
         for u, m in enumerate(unit.models):
             for w in choose_weapon(unit, sep, m.weapons):
                 weapon_type, attack_notation = w.type.split(" ")
@@ -386,10 +392,15 @@ def morale_test(i: int, units: List[List[Unit]], stats: List[Dict[str, Any]]) ->
     for unit in units[i]:
         unit_size = len(unit.models)
         if unit_size > 0 and unit.models_lost > 0:
-            leadership = max(m.model.leadership for m in unit.models)
-            morale_test = roll_d(6) + unit.models_lost
-            if morale_test > leadership:
-                flee = min(max(morale_test - leadership, 0), unit_size)
+            leadership = unit.unit_leadership()
+            result = roll_d(6)
+            morale_result = result + unit.models_lost
+            if result > 1 and morale_result > leadership:
+                flee = 1
+                modifier = -1 if unit_size < unit.starting_strength / 2 else 0
+                for x in range(unit_size - 1):
+                    if roll_d(6) + modifier <= 1:
+                        flee += 1
                 logging.info("Morale Test Fails, {} models flee".format(flee))
                 for x in range(flee):
                     model = unit.models.pop()
@@ -402,5 +413,7 @@ def morale_test(i: int, units: List[List[Unit]], stats: List[Dict[str, Any]]) ->
 def morale_phase(i: int, units: List[List[Unit]], stats: List[Dict[str, Any]]) -> None:
     """Test both players starting with current player"""
     opfor = get_opfor(i)
+    # TODO technically should alternate player, not that it should make a difference here?
     morale_test(i, units, stats)
     morale_test(opfor, units, stats)
+    # Coherencey Test

@@ -4,7 +4,6 @@ from typing import List, Tuple
 import logging
 
 import rules
-from stratgey import Strategy
 
 ModelStats = namedtuple(
     'ModelStats', [
@@ -72,7 +71,7 @@ class Model():
 
 class Unit():
     def __init__(self, name: str, unit_type: str, pos: float,
-                 strategy: Strategy, models: List[Model]):
+                 strategy, models: List[Model]):
         self.name = name
         self.unit_type = unit_type
         self.pos = pos
