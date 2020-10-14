@@ -1,9 +1,12 @@
 from collections import namedtuple
 from enum import Enum
-from typing import List, Tuple
+from typing import List, Tuple, TYPE_CHECKING
 import logging
 
 import rules
+
+if TYPE_CHECKING:
+    from stratgey import Strategy
 
 ModelStats = namedtuple(
     'ModelStats', [
@@ -71,7 +74,7 @@ class Model():
 
 class Unit():
     def __init__(self, name: str, unit_type: str, pos: float,
-                 strategy, models: List[Model]):
+                 strategy: Strategy, models: List[Model]):
         self.name = name
         self.unit_type = unit_type
         self.pos = pos
