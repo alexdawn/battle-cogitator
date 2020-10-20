@@ -74,7 +74,7 @@ class Model():
 
 class Unit():
     def __init__(self, name: str, unit_type: str, pos: float,
-                 strategy: Strategy, models: List[Model]):
+                 strategy: 'Strategy', models: List[Model]):
         self.name = name
         self.unit_type = unit_type
         self.pos = pos
