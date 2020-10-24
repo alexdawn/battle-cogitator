@@ -5,24 +5,33 @@ from itertools import zip_longest
 from copy import deepcopy
 
 from rules import take_round, player_has_models, player_model_count
-from deployment import make_unit
+from deployment import make_unit, make_tank
 from unit import Unit
 from thoughts import thought_for_the_day
 from stats import mean, get_stats
 
+logging.basicConfig(level=logging.INFO)
+
 
 def simulate_games(samples: int) -> Dict[str, Any]:
+    """Runs a set of simulations to get some average stats"""
     player_names = ['Loyal', 'Traitor']
     units = (
         [
-            make_unit("1st Sqd", 0),
-            make_unit("2nd Sqd", 0)
+            make_unit("1st Sqd", 0, False),
+            make_unit("2nd Sqd", 0, True),
+            make_tank("Tank 1", 0, False)
         ],
         [
-            make_unit("1st Sqd", 50),
-            make_unit("2nd Sqd", 50)
+            make_unit("1st Sqd", 50, False),
+            make_unit("2nd Sqd", 50, True),
+            make_tank("Tank 1", 0, False)
         ],
     )
+    options = {
+        'reinforce_position_0': 0,
+        'reinforce_position_1': 50
+    }
     rounds, winner = [], []
     player1_kia, player1_mia = [], []
     player2_kia, player2_mia = [], []
@@ -37,7 +46,7 @@ def simulate_games(samples: int) -> Dict[str, Any]:
             deepcopy(units[0]),
             deepcopy(units[1])
         ]
-        round, win, stats = simulate_game(player_names, units_copy)
+        round, win, stats = simulate_game(player_names, units_copy, options)
         rounds.append(float(round))
         winner.append(float(win))
         player1_kia.append(stats[0]['KIA'])
@@ -88,7 +97,9 @@ def simulate_games(samples: int) -> Dict[str, Any]:
     }
 
 
-def simulate_game(player_names: List[str], units: List[List[Unit]]) -> Tuple[int, int, Any]:
+def simulate_game(player_names: List[str], units: List[List[Unit]], options)\
+        -> Tuple[int, int, Any]:
+    """Runs one game"""
     stats: List[Dict[str, Any]] = [
         {'KIA': 0, 'MIA': 0, 'troops_per_turn': [], 'killzone': [], 'overkill': [],
          'models_per_turn': [],
@@ -103,7 +114,7 @@ def simulate_game(player_names: List[str], units: List[List[Unit]]) -> Tuple[int
         logging.info("Round {}".format(round))
         for i in range(0, 2):
             stats[i]['models_per_turn'].append(player_model_count(units, i))
-        won = take_round(player_names, units, stats)
+        won = take_round(player_names, units, stats, options)
         round += 1
     for i in range(0, 2):
         stats[i]['models_per_turn'].append(player_model_count(units, i))

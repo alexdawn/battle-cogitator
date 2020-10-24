@@ -1,6 +1,6 @@
 from collections import namedtuple
 from enum import Enum
-from typing import List, Tuple, TYPE_CHECKING
+from typing import List, Tuple, Set, TYPE_CHECKING
 import logging
 
 import rules
@@ -13,6 +13,7 @@ ModelStats = namedtuple(
         'name', 'movement', 'weapon_skill', 'ballistic_skill',
         'strength', 'toughness', 'wounds', 'attacks', 'leadership', 'armour'])
 
+# TODO handle multi-profile weapons
 Weapon = namedtuple(
     'Weapon', [
         'name', 'range', 'type',
@@ -37,7 +38,7 @@ class MoveStatus(Enum):
 
 
 Power = namedtuple(
-    'Power', ['name', 'power_level', 'ability']
+    'Power', ['name', 'warp_charge', 'ability']
 )
 
 Ability = namedtuple(
@@ -50,6 +51,7 @@ DamageTable = namedtuple(
 
 
 class Model():
+    """Model is a single figure"""
     def __init__(
             self, model: ModelStats, damage_table: List[DamageTable], powers: List[Power],
             abilities: List[Ability], weapons: List[Weapon]):
@@ -60,24 +62,27 @@ class Model():
         self.weapons = weapons
 
     def apply_damage(self, damage: int):
+        """Apply damage to the model by updating its wounds"""
         if damage < self.model.wounds:
             self.model = self.model._replace(wounds=self.model.wounds - damage)
             self.update_stats()
 
     def update_stats(self):
+        """If the model has a damage table check if any characteristics change"""
         for row in self.damage_table:
             if self.model.wounds <= row.max and self.model.wounds >= row.min:
-                for x in row.stats:
-                    pass
+                self.model._replace(**row.stats)
                 break
 
 
 class Unit():
+    """Unit is a collection of one or more models that acts together"""
     def __init__(self, name: str, unit_type: str, pos: float,
-                 strategy: 'Strategy', models: List[Model]):
+                 strategy: 'Strategy', models: List[Model], tags: Set[str], off_board: bool):
         self.name = name
         self.unit_type = unit_type
         self.pos = pos
+        self.off_board = off_board
         self.strategy = strategy  # Type Enum
         self.moved = MoveStatus.YET_TO_MOVED  # Tyoe: MoveStatus
         self.has_charged = False
@@ -86,13 +91,24 @@ class Unit():
         self.starting_strength = len(models)
         self.has_used_grenade = False
         self.models = models
+        self.tags = tags
 
-    def reset(self):
+    def reset(self) -> None:
         """Flags unit to start of the turn state"""
         self.moved = MoveStatus.YET_TO_MOVED
         self.has_charged = False
         self.models_lost = 0
         self.has_used_grenade = False
+
+    def add_to_board(self, pos: float) -> None:
+        """Method to add unit to the board late"""
+        self.off_board = False
+        self.moved = MoveStatus.MOVED
+        self.pos = pos
+
+    def has_big_guns_never_tire(self) -> bool:
+        """Does the big guns rule apply to this unit?"""
+        return 'vehicle' in self.tags or 'monster' in self.tags
 
     def max_effective_range(self) -> float:
         """Find the maximum range of the unit"""
@@ -114,6 +130,13 @@ class Unit():
         """Check if unit is within distance of a position"""
         return abs(self.pos - pos) < distance
 
+    def can_attack(self) -> bool:
+        """Check if unit can attack, considering the big guns never tire"""
+        if not self.engaged or self.has_big_guns_never_tire():
+            return True
+        else:
+            return False
+
     def take_damage(self, damage: int, message: List[str]) -> Tuple[bool, int]:
         """Apply damage to a model, return if the model is killed and how much damage was applied"""
         wounds_remaining = self.models[-1].model.wounds
@@ -131,7 +154,7 @@ class Unit():
     def hold(self):
         """Apply hold as a movement"""
         self.moved = MoveStatus.HELD
-        logging.info("held at {}".format(self.pos))
+        logging.info("{} held at {}".format(self.name, self.pos))
 
     def move(self, distance, direction):
         """Move unit"""
@@ -139,7 +162,7 @@ class Unit():
             assert distance <= self.unit_movement()
             self.moved = MoveStatus.MOVED
             self.pos += direction * distance
-            logging.info("moved to {}".format(self.pos))
+            logging.info("{} moved to {}".format(self.name, self.pos))
         else:
             raise RuntimeError("Ordered to move but engaged")
 
@@ -149,7 +172,7 @@ class Unit():
             assert distance <= self.unit_movement()
             self.moved = MoveStatus.ADVANCED
             advance = rules.roll_d(6)
-            logging.info("Advance an extra {}".format(advance))
+            logging.info("{} advanced an extra {} to {}".format(self.name, advance, self.pos))
             self.pos += (distance + advance) * direction
         else:
             raise RuntimeError("Ordered to advance but engaged")
@@ -159,7 +182,7 @@ class Unit():
         if self.engaged:
             assert distance <= self.unit_movement()
             self.moved = MoveStatus.FELL_BACK
-            logging.info("Unit fell back")
+            logging.info("{} fell back".format(self.name))
             self.pos += distance * -direction
             self.engaged = False
         else:

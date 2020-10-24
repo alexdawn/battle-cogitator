@@ -61,7 +61,9 @@ def headlong_charge(unit: Unit, seperation: float, direction: float) -> None:
 
 def keep_seperation(unit: Unit, seperation: float, direction: float) -> None:
     """This unit will actively try and keep its range from enemies"""
-    if seperation < unit.max_effective_range():
+    if unit.engaged:
+        unit.fall_back(unit.unit_movement(), -direction)
+    elif seperation < unit.max_effective_range():
         unit.move(min(unit.unit_movement(), unit.max_effective_range() - seperation), -direction)
     else:
         unit.hold()
