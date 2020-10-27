@@ -398,16 +398,18 @@ def charge_phase(i: int, units: List[List[Unit]], stats: List[Dict[str, Any]]) -
             if opossing_unit:
                 seperation = abs(get_seperation(unit, opossing_unit))
                 if units[i] and seperation <= 12 and seperation > 1:
-                    logging.info("Defender fires in overwatch...")
-                    shoot_with_unit(
-                        opfor, units, opossing_unit, stats,
-                        is_overwatch=True, charging_unit=unit
-                    )
+                    if not opossing_unit.engaged:
+                        logging.info("Defender fires in overwatch...")
+                        shoot_with_unit(
+                            opfor, units, opossing_unit, stats,
+                            is_overwatch=True, charging_unit=unit
+                        )
                     charge = roll_d(6) + roll_d(6)
                     if charge >= seperation:
                         logging.info("Charge success {}".format(charge))
                         unit.engaged, opossing_unit.engaged = True, True
                         unit.pos += direction * min(charge, seperation)
+                        # TODO do heroic interventions
                     else:
                         logging.info("Charge failed rolled {}, but needed {}".format(
                             charge, seperation))

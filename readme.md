@@ -1,21 +1,26 @@
 ## Features
 
+* 9th Ed Rules
 * Simulate multi-turn combat for squads
 * Linear movement, single position squad
 * Shooting, weapon types
+* Vehicle Damage Tables
 * Common Dice Notation
 * Charge, Overwatch, Melee
 * Morale
 * Simulation Statistics (KIA, MIA)
 * Detailed Stats damage per weapon, damage per unit, location of kills
+* Thought of the day
+* Imperial date format
 
 ## Work In Progress
 
 * REST API using flask
 * handle special abilities
 * battlescribe imports (cat and roster)
+* handle vehicles
 
-## TODO
+## Todo
 
 * 9th ed rules
 * handle more movement strategies
@@ -29,8 +34,6 @@
 * handle invunrable saves
 * handle cover
 * handle terrain
-
-* handle vehicles
 * handle transport
 
 * Stats Expectation (mathhammer style)

@@ -64,14 +64,15 @@ class Model():
     def apply_damage(self, damage: int):
         """Apply damage to the model by updating its wounds"""
         if damage < self.model.wounds:
-            self.model = self.model._replace(wounds=self.model.wounds - damage)
+            self.model = self.model._replace(wounds=self.model.wounds-damage)
             self.update_stats()
+
 
     def update_stats(self):
         """If the model has a damage table check if any characteristics change"""
         for row in self.damage_table:
             if self.model.wounds <= row.max and self.model.wounds >= row.min:
-                self.model._replace(**row.stats)
+                self.model = self.model._replace(**row.stats)
                 break
 
 
