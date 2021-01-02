@@ -1,6 +1,8 @@
 .vscode
 /venv/
 /.ipynb_checkpoints/
+notebooks/battlescribe/cache
+notebooks/battlescribe/outputs
 *.pyc
 *.html
 .coverage
