@@ -1,5 +1,6 @@
 import requests
 from itertools import chain
+from functools import partial
 from collections import namedtuple
 import logging
 import os
@@ -16,6 +17,11 @@ CONTENT_URL = 'https://raw.githubusercontent.com/BSData/wh40k/master/'
 GAME_SCHEMA = os.path.join(CURR_DIR, 'notebooks/battlescribe/game_schema.xsd')
 CAT_SCHEMA = os.path.join(CURR_DIR, 'notebooks/battlescribe/catelogue_schema.xsd')
 CACHE = os.path.join(CURR_DIR, 'notebooks/battlescribe/cache')
+
+namespaces = {
+    'gc': 'http://www.battlescribe.net/schema/gameSystemSchema',
+    'cat': 'http://www.battlescribe.net/schema/catalogueSchema'
+}
 
 
 def get_cache_if_possible(filename):
@@ -34,33 +40,55 @@ def get_cache_if_possible(filename):
     return text
 
 
-def convert_catalogue(catalogue):
-    name, ext = catalogue.split(".")
-    if ext == 'cat':
-        print(name)
-        path = os.path.join(CONTENT_URL, catalogue)
-        r = requests.get(path)
-        cat = etree.fromstring(
+def escape_to_safe_json(x):
+    """Because XSLT has limited replacement functions, it is done here in python first"""
+    return x.replace('\\', '\\\\').replace('"', '\\"').replace('\r', '\\r').replace('\n', '\\n')
+
+
+def load_cat_file_to_dom(catalogue):
+    return etree.fromstring(
             get_cache_if_possible(catalogue),
             etree.XMLParser(
                 remove_blank_text=True, schema = catelogue_schema
             )
         )
-        # warn about cat links at the moment do nothing about them
-        link = cat.xpath("//cat:catalogueLink", namespaces=namespaces)
-        for x in link:
-            logging.warning("{} has catalogue Link to {}".format(
-                name, x.xpath('@name')
-                ))
-        # merge main cat into gst, TODO do for all the needed links
-        base_copy = deepcopy(base)
+
+def convert_catalogue(game_system, catalogue):
+    name, ext = catalogue.split(".")
+    if ext == 'cat':
+        print(name)
+        path = os.path.join(CONTENT_URL, catalogue)
+        r = requests.get(path)
+        cat = load_cat_file_to_dom(catalogue)
+
+        # Catalogues can link to other catalogues
+        extra_cats = {}
+        for x in cat.xpath("//cat:catalogueLink", namespaces=namespaces):
+            assert x.attrib['type'] == 'catalogue', "Catalogue link has type which is not a catalogue {}".format(x.attrib)
+            extra_cats[x.attrib['name']] = {
+                'dom': load_cat_file_to_dom(x.attrib['name'] + '.cat'),
+                'import_root': True if x.attrib['importRootEntries'] == 'true' else False
+            }
+
+        # merge main cat into gst, not certain but I think import root entries
+        # is to mark if to import selection Entries or not
+        base_copy = deepcopy(game_system)
         for x in cat:
             base_copy.append(x)
+        for cat_name, c in extra_cats.items():
+            print("Adding {} to DOM".format(cat_name))
+            for x in c['dom']:
+                if c['import_root'] or x.tag.split('}')[1] != 'entryLinks':
+                    base_copy.append(x)
+                else:
+                    print("didn't copy entryLinks")
         # escape things which are not valid json (done here as not so easy in XSLT 1.0)
         for x in base_copy.xpath(
             "//cat:*|//gc:*", namespaces=namespaces):
             if x.text:
-                x.text = x.text.replace('\\', '\\\\').replace('"', '\\"').replace('\r', '\\r').replace('\n', '\\n')
+                x.text = escape_to_safe_json(x.text)
+            for k, v in x.attrib.items():
+                x.attrib[k] = escape_to_safe_json(v)
         with open(os.path.join(CURR_DIR, "./notebooks/battlescribe/catelogue to_json.xslt"), "r") as f:
             xslt_root = etree.XML(f.read())
         transform = etree.XSLT(xslt_root)
@@ -82,26 +110,19 @@ if __name__ == '__main__':
     with open(CAT_SCHEMA, 'rb') as fh:
         catelogue_schema = etree.XMLSchema(etree.fromstring(fh.read()))
 
-    base = etree.fromstring(
+    base_game = etree.fromstring(
         get_cache_if_possible('Warhammer 40,000.gst'),
-        etree.XMLParser(
-            remove_blank_text=True, schema = game_schema
-        )
+        etree.XMLParser(remove_blank_text=True, schema=game_schema)
     )
-
-    namespaces = {
-        'gc': 'http://www.battlescribe.net/schema/gameSystemSchema',
-        'cat': 'http://www.battlescribe.net/schema/catalogueSchema'
-    }
 
     if not os.path.exists(os.path.join(CURR_DIR, './notebooks/battlescribe/outputs')):
         os.mkdir(os.path.join(CURR_DIR, './notebooks/battlescribe/outputs'))
 
-for catalogue in catalogues:
-    convert_catalogue(catalogue)
-# a very lazy multicore implementation, lxml is pretty processor heavy
-# from multiprocessing import Pool
-# pool = Pool()
-# pool.map(convert_catalogue, catalogues)
-# pool.close()
-# pool.join()
+    for catalogue in catalogues:
+        convert_catalogue(base_game, catalogue)
+    # a very lazy multicore implementation, lxml is pretty processor heavy
+    # from multiprocessing import Pool
+    # pool = Pool()
+    # pool.map(partial(convert_catalogue, base_game), catalogues)
+    # pool.close()
+    # pool.join()

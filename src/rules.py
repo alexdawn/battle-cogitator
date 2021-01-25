@@ -3,14 +3,16 @@ from typing import Tuple, List, Dict, Any
 from itertools import zip_longest
 from math import ceil
 import logging
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from unit import Unit, Model, Weapon, MoveStatus
+import unit
 from powers import psychic_test
 from stratgey import Strategy, get_strategy_function
 
+if TYPE_CHECKING:
+    from unit import Unit, Weapon, Model
 
-def take_round(players: List[str], units: List[List[Unit]], stats: List[Dict[str, Any]], options)\
+def take_round(players: List[str], units: List[List["Unit"]], stats: List[Dict[str, Any]], options)\
         -> bool:
     """Play a round for each player"""
     for i, p in enumerate(players):
@@ -26,17 +28,17 @@ def take_round(players: List[str], units: List[List[Unit]], stats: List[Dict[str
     return won
 
 
-def player_model_count(units: List[List[Unit]], i: int) -> int:
+def player_model_count(units: List[List["Unit"]], i: int) -> int:
     """Get count of models player has"""
     return sum(len(u.models) for u in units[i])
 
 
-def player_has_models(units: List[List[Unit]], i: int) -> bool:
+def player_has_models(units: List[List["Unit"]], i: int) -> bool:
     """Does player have any models left?"""
     return player_model_count(units, i) > 0
 
 
-def take_turn(i: int, player: str, units: List[List[Unit]], stats: List[Dict[str, Any]], options)\
+def take_turn(i: int, player: str, units: List[List["Unit"]], stats: List[Dict[str, Any]], options)\
         -> bool:
     """Run through each phase"""
     logging.info("{}".format(player))
@@ -94,22 +96,22 @@ def maximum_modification(x: str, modifiers: List[Tuple[str, int]], clamp_value: 
         int(apply_modifiers(x, modifiers)), int(x) + clamp_value), int(x) - clamp_value))
 
 
-def get_seperation(unit1: Unit, unit2: Optional[Unit]) -> float:
+def get_seperation(unit1: "Unit", unit2: Optional["Unit"]) -> float:
     """Get Distance between two units"""
-    if type(unit2) == Unit:
+    if type(unit2) == unit.Unit:
         return float(unit2.pos - unit1.pos)  # type: ignore
     else:
         return float("inf")
 
 
-def get_units_within(i: int, unit: Unit, units: List[List[Unit]], max_dist: float) -> List[Unit]:
+def get_units_within(i: int, unit: "Unit", units: List[List["Unit"]], max_dist: float) -> List["Unit"]:
     """Get units"""
     return [
         x for x in sorted(units[i], key=lambda ou: get_seperation(unit, ou))
         if get_seperation(unit, x) <= max_dist]
 
 
-def get_nearest_opposing_unit(unit: Unit, opfor: int, units: List[List[Unit]]) -> Optional[Unit]:
+def get_nearest_opposing_unit(unit: "Unit", opfor: int, units: List[List["Unit"]]) -> Optional["Unit"]:
     """Find the nearest opposing unit"""
     opossed = get_units_within(opfor, unit, units, float("inf"))
     if opossed:
@@ -122,14 +124,14 @@ def get_opfor(i: int) -> int:
     return 1 if i == 0 else 0
 
 
-def command_phase(i: int, units: List[List[Unit]]) -> None:
+def command_phase(i: int, units: List[List["Unit"]]) -> None:
     """Add Command Points, apply tactics"""
     logging.warning("No Command Points yet!")
     # if player[i].is_battle_forged:
     #     player[i].command_points += 1
 
 
-def move_phase(i: int, units: List[List[Unit]]) -> None:
+def move_phase(i: int, units: List[List["Unit"]]) -> None:
     """Move a players models"""
     for unit in units[i]:
         if unit.models:
@@ -140,14 +142,14 @@ def move_phase(i: int, units: List[List[Unit]]) -> None:
             strat(unit, abs(seperation), direction)
 
 
-def reinforcement_phase(i: int, units: List[List[Unit]], options) -> None:
+def reinforcement_phase(i: int, units: List[List["Unit"]], options) -> None:
     """Add units that arrive to the board late"""
     for unit in units[i]:
         if unit.off_board:  # No idea if there is restrictions in which round it can join or where?
             unit.add_to_board(options['reinforce_position_{}'.format(i)])
 
 
-def psychic_phase(i: int, units: List[List[Unit]], stats) -> None:
+def psychic_phase(i: int, units: List[List["Unit"]], stats) -> None:
     """Cast psychic powers"""
     cast_powers = set()
     for unit in units[i]:
@@ -178,7 +180,7 @@ def wound_roll(strength: int, toughness: int) -> Tuple[int, bool]:
     return result, result >= need
 
 
-def choose_weapon(unit: Unit, seperation: float, weapons: List[Weapon]) -> List[Weapon]:
+def choose_weapon(unit: "Unit", seperation: float, weapons: List["Weapon"]) -> List["Weapon"]:
     """choose non-pistol if option, model with weakest wepaon the grenade"""
     if abs(seperation) <= 1:
         if unit.has_big_guns_never_tire():
@@ -194,7 +196,7 @@ def choose_weapon(unit: Unit, seperation: float, weapons: List[Weapon]) -> List[
             return [w for w in weapons if "pistol" not in w.type and "grenade" not in w.type]
 
 
-def can_attack(unit: Unit, seperation: float, weapon: Weapon) -> bool:
+def can_attack(unit: "Unit", seperation: float, weapon: "Weapon") -> bool:
     """Check movement to see if weapon type can attack"""
     weapon_type, _ = weapon.type.split(" ")
     engagement_block = unit.engaged and not unit.has_big_guns_never_tire()
@@ -210,12 +212,12 @@ def can_attack(unit: Unit, seperation: float, weapon: Weapon) -> bool:
         return False
 
 
-def aim_penalty(unit: Unit, weapon_type: str) -> List[Tuple[str, int]]:
+def aim_penalty(unit: "Unit", weapon_type: str) -> List[Tuple[str, int]]:
     """Check movement to see if there are aim penalties"""
     penalties = []
     if unit.moved == 'advanced' and weapon_type == 'assault':
         penalties.append(('-', 1))
-    if unit.moved != MoveStatus.HELD and weapon_type == 'heavy':
+    if unit.moved != unit.MoveStatus.HELD and weapon_type == 'heavy':
         penalties.append(('-', 1))
     if unit.engaged and weapon_type == 'heavy':
         assert unit.has_big_guns_never_tire(), "Only vehicles and monster can shoot while engaged"
@@ -265,8 +267,8 @@ def flavour_text(name: str, weapon_type: str) -> str:
 
 
 def aim(
-        i: int, model: Model, unit: Unit, weapon: Weapon,
-        opossing_unit: Unit, is_overwatch: bool, combat_log: List[str], stats) -> bool:
+        i: int, model: "Model", unit: "Unit", weapon: "Weapon",
+        opossing_unit: "Unit", is_overwatch: bool, combat_log: List[str], stats) -> bool:
     """Part of attacking see if weapon hits"""
     result = roll_d(6)
     if weapon.type.split(" ")[0] != 'melee':
@@ -294,7 +296,7 @@ def aim(
         return False
 
 
-def wound(i: int, unit: Unit, weapon: Weapon, opossing_unit: Unit, combat_log: List[str], stats)\
+def wound(i: int, unit: "Unit", weapon: "Weapon", opossing_unit: "Unit", combat_log: List[str], stats)\
         -> bool:
     """Roll to see if hit causes a wound"""
     result, success = wound_roll(weapon.strength, opossing_unit.unit_toughness())
@@ -307,7 +309,7 @@ def wound(i: int, unit: Unit, weapon: Weapon, opossing_unit: Unit, combat_log: L
 
 
 def armour_save(
-        i: int, unit: Unit, weapon: Weapon, opossing_unit: Unit, combat_log: List[str], stats)\
+        i: int, unit: "Unit", weapon: "Weapon", opossing_unit: "Unit", combat_log: List[str], stats)\
         -> bool:
     """Roll ot see if armour saves"""
     # TODO handle invurable saves
@@ -321,7 +323,7 @@ def armour_save(
         return False
 
 
-def damage(i: int, unit: Unit, weapon: Weapon, opossing_unit: Unit, combat_log: List[str], stats)\
+def damage(i: int, unit: "Unit", weapon: "Weapon", opossing_unit: "Unit", combat_log: List[str], stats)\
         -> bool:
     """Work out and apply damage"""
     opfor = get_opfor(i)
@@ -338,8 +340,8 @@ def damage(i: int, unit: Unit, weapon: Weapon, opossing_unit: Unit, combat_log: 
 
 
 def shoot_with_unit(
-        i: int, units: List[List[Unit]], unit: Unit, stats: List[Dict[str, Any]],
-        is_overwatch: bool = False, charging_unit: Unit = None)\
+        i: int, units: List[List["Unit"]], unit: "Unit", stats: List[Dict[str, Any]],
+        is_overwatch: bool = False, charging_unit: "Unit" = None)\
         -> None:
     """Do shots with a unit"""
     # TODO handle grenade to be thrown by model with worst weapons
@@ -381,14 +383,14 @@ def shoot_with_unit(
                         logging.info(" ".join(combat_log))
 
 
-def shooting_phase(i: int, units: List[List[Unit]], stats: List[Dict[str, Any]]) -> None:
+def shooting_phase(i: int, units: List[List["Unit"]], stats: List[Dict[str, Any]]) -> None:
     """Shoot with each unit in turn"""
     for unit in units[i]:
         if unit.can_attack():
             shoot_with_unit(i, units, unit, stats)
 
 
-def charge_phase(i: int, units: List[List[Unit]], stats: List[Dict[str, Any]]) -> None:
+def charge_phase(i: int, units: List[List["Unit"]], stats: List[Dict[str, Any]]) -> None:
     """Do charge phase"""
     opfor = get_opfor(i)
     direction = 1 if i == 0 else -1
@@ -415,7 +417,7 @@ def charge_phase(i: int, units: List[List[Unit]], stats: List[Dict[str, Any]]) -
                             charge, seperation))
 
 
-def combat(i: int, units: List[List[Unit]], unit: Unit, stats: List[Dict[str, Any]]) -> None:
+def combat(i: int, units: List[List["Unit"]], unit: "Unit", stats: List[Dict[str, Any]]) -> None:
     """Enact the combat for one unit"""
     opfor = get_opfor(i)
     if len(units[opfor]):
@@ -437,7 +439,7 @@ def combat(i: int, units: List[List[Unit]], unit: Unit, stats: List[Dict[str, An
                                 logging.info(" ".join(combat_log))
 
 
-def fight_phase(i: int, units: List[List[Unit]], stats: List[Dict[str, Any]]) -> None:
+def fight_phase(i: int, units: List[List["Unit"]], stats: List[Dict[str, Any]]) -> None:
     """Fight phase rules, do charging combats first, then alternate other combats"""
     opfor = get_opfor(i)
     # charging unit fight first
@@ -455,7 +457,7 @@ def fight_phase(i: int, units: List[List[Unit]], stats: List[Dict[str, Any]]) ->
             combat(opfor, units, ou, stats)
 
 
-def morale_test(i: int, units: List[List[Unit]], stats: List[Dict[str, Any]]) -> None:
+def morale_test(i: int, units: List[List["Unit"]], stats: List[Dict[str, Any]]) -> None:
     """Go through each unit and do morale test"""
     for unit in units[i]:
         unit_size = len(unit.models)
@@ -478,7 +480,7 @@ def morale_test(i: int, units: List[List[Unit]], stats: List[Dict[str, Any]]) ->
                 logging.info("{} passes Morale Test!".format(unit.name))
 
 
-def morale_phase(i: int, units: List[List[Unit]], stats: List[Dict[str, Any]]) -> None:
+def morale_phase(i: int, units: List[List["Unit"]], stats: List[Dict[str, Any]]) -> None:
     """Test both players starting with current player"""
     opfor = get_opfor(i)
     # TODO technically should alternate player, not that it should make a difference here?

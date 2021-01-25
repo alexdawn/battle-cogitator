@@ -38,8 +38,9 @@
 
     <xsl:template match="/">
         <xsl:text>{</xsl:text>
+        <xsl:text>"entry_links": {</xsl:text>
         <xsl:apply-templates select="gc:gameSystem/cat:entryLinks"/>
-        <xsl:text>}</xsl:text>
+        <xsl:text>}}</xsl:text>
     </xsl:template>
 
     <!-- named templates-->
@@ -57,15 +58,19 @@
         <xsl:value-of select="@name"/>
         <xsl:text>",&#xd;</xsl:text>
         <xsl:call-template name="commentable"/>
+        <xsl:text>"modifiers": [</xsl:text>
         <xsl:apply-templates select="gc:modifiers|cat:modifiers"/>
+        <xsl:text>],&#xd;</xsl:text>
+        <xsl:text>"modifier_groups": [</xsl:text>
         <xsl:apply-templates select="gc:modifierGroups|cat:modifierGroups"/>
+        <xsl:text>],&#xd;</xsl:text>
     </xsl:template>
 
     <xsl:template name="containerEntryBase">
         <xsl:call-template name="entryBase"/>
-        <xsl:text>,&#xd;</xsl:text>
+        <xsl:text>"constraints": [</xsl:text>
         <xsl:apply-templates select="gc:constraints|cat:constraints"/>
-        <xsl:text>,&#xd;</xsl:text>
+        <xsl:text>],&#xd;</xsl:text>
         <xsl:call-template name="infoNodeGroup"/>
     </xsl:template>
 
@@ -81,28 +86,37 @@
     <xsl:template name="selectionEntryBase">
         <xsl:call-template name="primaryCategory"/>
         <xsl:call-template name="containerEntryBase"/>
+        <xsl:text>"selection_entries": [</xsl:text>
         <xsl:apply-templates select="gc:selectionEntries|cat:selectionEntries"/>
-        <xsl:text>,&#xd;</xsl:text>
+        <xsl:text>],&#xd;</xsl:text>
+        <xsl:text>"selection_entry_groups": [</xsl:text>
         <xsl:apply-templates select="gc:selectionEntryGroups|cat:selectionEntryGroups"/>
-        <xsl:text>,&#xd;</xsl:text>
+        <xsl:text>],&#xd;</xsl:text>
+        <xsl:text>"entry_links": {</xsl:text>
         <xsl:apply-templates select="gc:entryLinks|cat:entryLinks"/>
-        <xsl:text>,&#xd;</xsl:text>
+        <xsl:text>},&#xd;</xsl:text>
+        <xsl:text>"category_links": [</xsl:text>
         <xsl:apply-templates select="gc:categoryLinks|cat:categoryLinks"/>
+        <xsl:text>],</xsl:text>
     </xsl:template>
 
     <xsl:template name="infoNodeGroup">
+        <xsl:text>"profiles": [</xsl:text>
         <xsl:apply-templates select="gc:profiles|cat:profiles"/>
-        <xsl:text>,&#xd;</xsl:text>
+        <xsl:text>],&#xd;</xsl:text>
+        <xsl:text>"rules": [</xsl:text>
         <xsl:apply-templates select="gc:rules|cat:rules"/>
-        <xsl:text>,&#xd;</xsl:text>
+        <xsl:text>],&#xd;</xsl:text>
+        <xsl:text>"info_groups": [</xsl:text>
         <xsl:apply-templates select="gc:infoGroups|cat:infoGroups"/>
-        <xsl:text>,&#xd;</xsl:text>
+        <xsl:text>],&#xd;</xsl:text>
+        <xsl:text>"info_links": [</xsl:text>
         <xsl:apply-templates select="gc:infoLinks|cat:infoLinks"/>
+        <xsl:text>],&#xd;</xsl:text>
     </xsl:template>
 
     <xsl:template name="infoGroup">
         <xsl:call-template name="entryBase"/>
-        <xsl:text>,&#xd;</xsl:text>
         <xsl:call-template name="infoNodeGroup"/>
     </xsl:template>
 
@@ -124,11 +138,9 @@
     </xsl:template>
 
     <xsl:template match="gc:categoryEntries|cat:categoryEntries">
-        <xsl:text>"category_entries": [</xsl:text>
         <xsl:for-each select="gc:categoryEntry|cat:categoryEntry">
             <xsl:apply-templates select="."/>&#xD;
         </xsl:for-each>
-        <xsl:text>]&#xd;</xsl:text>
     </xsl:template>
 
     <xsl:template match="gc:categoryEntry|cat:categoryEntry">
@@ -141,7 +153,6 @@
     </xsl:template>
 
     <xsl:template match="gc:profiles|cat:profiles">
-        <xsl:text>"profiles": [</xsl:text>
         <xsl:for-each select="gc:profile|cat:profile">
             <xsl:text>{&#xD;</xsl:text>
             <xsl:apply-templates select="."/>
@@ -150,11 +161,10 @@
                 <xsl:text>,&#xD;</xsl:text>
             </xsl:if>
         </xsl:for-each>
-        <xsl:text>]</xsl:text>
     </xsl:template>
 
     <xsl:template match="gc:profile|cat:profile">
-        <xsl:text>"type": "profile", "profile_type": "</xsl:text>
+        <xsl:text>"profile_type": "</xsl:text>
         <xsl:value-of select="@typeName"/>
         <xsl:text>",&#xd;</xsl:text>
         <xsl:text>"name": "</xsl:text>
@@ -183,7 +193,6 @@
     </xsl:template>
 
     <xsl:template match="gc:sharedSelectionEntries|gc:selectionEntries|cat:sharedSelectionEntries|cat:selectionEntries">
-        <xsl:text>"selection_entries": [</xsl:text>
         <xsl:for-each select="gc:selectionEntry|cat:selectionEntry">
             <xsl:text>{</xsl:text>
                 <xsl:apply-templates select="."/>
@@ -192,28 +201,31 @@
                 <xsl:text>,&#xD;</xsl:text>
             </xsl:if>
         </xsl:for-each>
-        <xsl:text>]&#xd;</xsl:text>
+    </xsl:template>
+
+    <xsl:template match="gc:selectionEntryGroup|cat:selectionEntryGroup">
+        <xsl:call-template name="selectionEntryBase"/>
+        <xsl:text>"default_selection": "</xsl:text>
+        <xsl:value-of select="@defaultSelectionEntryId"/>
+         <xsl:text>"</xsl:text>
     </xsl:template>
 
     <xsl:template match="gc:sharedSelectionEntryGroups|gc:selectionEntryGroups|cat:sharedSelectionEntryGroups|cat:selectionEntryGroups">
-        <xsl:text>"seletion_entry_groups": [</xsl:text>
         <xsl:for-each select="gc:selectionEntryGroup|cat:selectionEntryGroup">
             <xsl:text>{</xsl:text>
-            <xsl:call-template name="selectionEntryBase"/>
-            <xsl:text>"default_selection": "</xsl:text>
-            <xsl:value-of select="@defaultSelectionEntryId"/>
-            <xsl:text>"}</xsl:text>
+            <xsl:apply-templates select="."/>
+            <xsl:text>}</xsl:text>
             <xsl:if test="position() != last()">
                 <xsl:text>,&#xD;</xsl:text>
             </xsl:if>
         </xsl:for-each>
-        <xsl:text>]&#xd;</xsl:text>
     </xsl:template>
 
     <xsl:template match="gc:entryLinks|cat:entryLinks">
-        <xsl:text>"entry_links": [</xsl:text>
         <xsl:for-each select="gc:entryLink|cat:entryLink">
-            <xsl:text>{</xsl:text>
+            <xsl:text>"</xsl:text>
+            <xsl:value-of select="@id"/>
+            <xsl:text>": {</xsl:text>
             <xsl:call-template name="selectionEntryBase"/>
             <xsl:text>"costs": {</xsl:text>
             <xsl:apply-templates select="gc:costs|cat:costs"/>
@@ -221,10 +233,6 @@
             <xsl:text>"target_type": "</xsl:text>
             <xsl:apply-templates select="@type"/>
             <xsl:text>",&#xd;</xsl:text>
-            <xsl:apply-templates select="gc:entryLinks|cat:entryLinks"/>
-            <xsl:if test="gc:entryLinks|cat:entryLinks">
-                <xsl:text>,&#xd;</xsl:text>
-            </xsl:if>
             <xsl:text>"link_target": {</xsl:text>
             <xsl:apply-templates select="key(@type, @targetId)"/>
             <xsl:text>}</xsl:text>
@@ -233,22 +241,18 @@
                 <xsl:text>,&#xD;</xsl:text>
             </xsl:if>
         </xsl:for-each>
-        <xsl:text>]&#xd;</xsl:text>
     </xsl:template>
 
     <xsl:template match="gc:categoryLinks|cat:categoryLinks">
-        <xsl:text>"category_links": [</xsl:text>
         <xsl:for-each select="gc:categoryLink|cat:categoryLink">
             <xsl:apply-templates select="key('category', @targetId)"/>
             <xsl:if test="position() != last()">
                 <xsl:text>,&#xD;</xsl:text>
             </xsl:if>
         </xsl:for-each>
-        <xsl:text>]&#xd;</xsl:text>
     </xsl:template>
 
     <xsl:template match="gc:sharedInfoGroups|gc:infoGroups|cat:sharedInfoGroups|cat:infoGroups">
-        <xsl:text>"info_group": [</xsl:text>
         <xsl:for-each select="gc:infoGroup|cat:infoGroup">
             <xsl:text>{</xsl:text>
             <xsl:call-template name="infoGroup"/>
@@ -257,14 +261,11 @@
                 <xsl:text>,&#xD;</xsl:text>
             </xsl:if>
         </xsl:for-each>
-        <xsl:text>]&#xd;</xsl:text>
     </xsl:template>
 
     <xsl:template match="gc:infoLinks|cat:infoLinks">
-        <xsl:text>"info_links": [&#xd;</xsl:text>
         <xsl:for-each select="gc:infoLink|cat:infoLink">
             <xsl:text>{&#xd;</xsl:text>
-            <xsl:text>"type": "info_link",&#xd;</xsl:text>
             <xsl:text>"target_type": "</xsl:text>
             <xsl:value-of select="@type"/>
             <xsl:text>",&#xd;</xsl:text>
@@ -276,7 +277,6 @@
                 <xsl:text>,&#xD;</xsl:text>
             </xsl:if>
         </xsl:for-each>
-        <xsl:text>]&#xd;</xsl:text>
     </xsl:template>
 
     <xsl:template match="gc:rule|cat:rule">
@@ -290,7 +290,6 @@
     </xsl:template>
 
     <xsl:template match="gc:rules|gc:sharedRules|cat:rules|cat:sharedRules">
-        <xsl:text>"rules": [&#xd;</xsl:text>
             <xsl:for-each select="gc:rule|cat:rule">
                 <xsl:text>{</xsl:text>
                 <xsl:apply-templates select="."/>
@@ -299,7 +298,6 @@
                     <xsl:text>,&#xD;</xsl:text>
                 </xsl:if>
             </xsl:for-each>
-        <xsl:text>]&#xd;</xsl:text>
     </xsl:template>
 
     <xsl:template name="queryBase">
@@ -334,7 +332,6 @@
     </xsl:template>
 
     <xsl:template match="gc:constraints|cat:constraints">
-        <xsl:text>"constraints": [&#xd;</xsl:text>
         <!--<xsl:for-each select="gc:constraint|cat:constraint">
             <xsl:text>{&#xd;</xsl:text>
             <xsl:text>"id": "</xsl:text>
@@ -349,11 +346,9 @@
                 <xsl:text>,&#xD;</xsl:text>
             </xsl:if>
         </xsl:for-each>-->
-        <xsl:text>]&#xd;</xsl:text>
     </xsl:template>
 
     <xsl:template match="gc:conditions|cat:conditions">
-        <xsl:text>"conditions": [&#xd;</xsl:text>
         <!--<xsl:for-each select="gc:condition|cat:condition">
             <xsl:text>{&#xd;</xsl:text>
             <xsl:text>"child_id": "</xsl:text>
@@ -368,7 +363,6 @@
                 <xsl:text>,&#xD;</xsl:text>
             </xsl:if>
         </xsl:for-each>-->
-        <xsl:text>]&#xd;</xsl:text>
     </xsl:template>
 
     <xsl:template match="gc:repeats|cat:repeats">
@@ -394,13 +388,15 @@
     </xsl:template>
 
     <xsl:template match="gc:conditionGroups|cat:conditionGroups">
+        <xsl:text>"conditions": [</xsl:text>
         <xsl:apply-templates select="gc:conditions|cat:conditions"/>
-        <xsl:text>,&#xd;</xsl:text>
+        <xsl:text>],&#xd;</xsl:text>
+        <xsl:text>"condition_groups": [</xsl:text>
         <xsl:apply-templates select="gc:conditionGroups|cat:conditionGroups"/>
+        <xsl:text>],&#xd;</xsl:text>
     </xsl:template>
 
     <xsl:template match="gc:modifiers|cat:modifiers">
-        <xsl:text>"modifiers": [&#xd;</xsl:text>
         <!--<xsl:for-each select="gc:modifier|cat:modifier">
             <xsl:text>{</xsl:text>
             <xsl:if test="gc:conditions|gc:conditionGroups|cat:conditions|cat:conditionGroups">
@@ -431,11 +427,9 @@
                 <xsl:text>,&#xD;</xsl:text>
             </xsl:if>
         </xsl:for-each>-->
-        <xsl:text>]&#xd;</xsl:text>
     </xsl:template>
 
     <xsl:template match="gc:modifierGroups|cat:modifierGroups">
-        <xsl:text>"modifiers_groups": [&#xd;</xsl:text>
         <xsl:for-each select="gc:modifierGroup|cat:modifierGroup">
             <xsl:text>{</xsl:text>
             <xsl:text>}</xsl:text>
@@ -443,6 +437,5 @@
                 <xsl:text>,&#xD;</xsl:text>
             </xsl:if>
         </xsl:for-each>
-        <xsl:text>]&#xd;</xsl:text>
     </xsl:template>
 </xsl:stylesheet>

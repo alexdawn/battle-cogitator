@@ -48,7 +48,7 @@ function build_build() {
 # }
 
 function build_citest() {
-     coverage run --branch --source="$PRJDIR" -m pytest --pyargs "$PRJDIR" "$PRJDIR"
+     coverage run --branch --source="$PRJDIR" -m pytest --pdb --pyargs "$PRJDIR" "$PRJDIR"
 }
 
 function build_restore() {

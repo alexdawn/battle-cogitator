@@ -32,6 +32,3 @@ def get_imperial_date_now() -> str:
 
 if __name__ == "__main__":
     print("now", get_imperial_date_now())
-    for year in range(1900, 2021):
-        for month in range(1, 13):
-            print("{}-{}".format(year, month), get_imperial_date_from_date(year, month, 1))
